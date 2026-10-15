@@ -1,143 +1,88 @@
-from flask import Flask, request, jsonify
-from flask_cors import CORS
-app = Flask(__name__)
-CORS(app)
-posts = []
-
-@app.route('/')
-def home():
-    html = '''
 <!DOCTYPE html>
 <html>
 <head>
 <meta name="viewport" content="width=device-width,initial-scale=1">
+<title>GelephuGram V3</title>
 <style>
-*{margin:0;padding:0;box-sizing:border-box}
-body{background:#000;color:#fff;font-family:Arial;width:100%}
-.top{padding:14px;text-align:center;font-size:28px;border-bottom:1px solid #222;position:sticky;top:0;background:#000}
-.story{display:flex;gap:12px;padding:10px;overflow:auto;border-bottom:1px solid #222}
-.s{text-align:center}
-.r{width:60px;height:60px;border-radius:50%;padding:2px;background:linear-gradient(45deg,#feda75,#fa7e1e,#d62976)}
-.i{width:100%;height:100%;border-radius:50%;background:#222;display:flex;align-items:center;justify-content:center;border:2px solid #000}
-.post{border-bottom:1px solid #222}
-.h{padding:10px;display:flex;gap:8px;align-items:center}
-.a{width:30px;height:30px;border-radius:50%;background:#f90;display:flex;align-items:center;justify-content:center;font-weight:bold}
-.m img,.m video{width:100%;display:block}
-.act{padding:10px;font-size:22px;display:flex;gap:14px}
-.likes{padding:0 10px;font-weight:bold;font-size:14px}
-.cap{padding:4px 10px;font-size:14px}
-.cmt{padding:4px 10px;color:#aaa;font-size:14px}
-.b{color:#fff}
-.add{display:flex;padding:8px 10px;border-top:1px solid #222;gap:8px}
-.add input{flex:1;background:transparent;border:none;color:#fff;outline:none}
-.add button{background:none;border:none;color:#0af;font-weight:bold}
-.create{padding:10px;border-bottom:1px solid #222;display:flex;gap:8px}
-.create textarea{flex:1;background:#111;border:1px solid #222;border-radius:18px;padding:8px 12px;color:#fff;outline:none}
-.create button{background:#0af;border:none;color:#fff;padding:8px 14px;border-radius:18px;font-weight:bold}
+body{margin:0;background:#fff8e1;font-family:sans-serif}
+header{background:linear-gradient(90deg,#ff8f00,#ffd600);padding:14px;text-align:center;font-weight:bold;font-size:22px;color:#000;position:sticky;top:0;z-index:10}
+header span{font-size:12px;display:block;font-weight:normal}
+main{max-width:500px;margin:auto;padding:10px}
+.card{background:white;border-radius:16px;padding:12px;margin:12px 0;box-shadow:0 4px 10px #0001}
+.input-row{display:flex;gap:8px;align-items:center}
+.input-row input[type=text]{flex:1;padding:12px;border-radius:20px;border:2px solid #ff8f00}
+.btn{background:#ff8f00;color:white;border:0;border-radius:20px;padding:10px 16px;font-weight:bold}
+.btn-photo{background:#333}
+.post{border:1px solid #ffe082;border-radius:16px;overflow:hidden;margin:14px 0;background:white}
+.post-top{padding:10px;display:flex;gap:10px;align-items:center}
+.avatar{width:40px;height:40px;background:linear-gradient(135deg,#ff8f00,#ffd600);border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:bold}
+.post img{width:100%;max-height:400px;object-fit:cover}
+.actions{padding:10px;display:flex;gap:18px;font-size:22px}
+.actions b{cursor:pointer}
+.info{padding:0 12px 12px}
+.small{color:gray;font-size:11px}
 </style>
 </head>
 <body>
-<div class="top">ZILNOEN'S</div>
-<div class="story"><div class="s"><div class="r"><div class="i">K</div></div><div style="font-size:11px">You</div></div></div>
-<div class="create"><input type="file" id="f" accept="image/*,video/*" style="display:none" onchange="pv(event)"><label for="f" style="background:#222;padding:8px;border-radius:8px">📷</label><textarea id="cap" placeholder="What in your mind?"></textarea><button onclick="post()">Share</button></div>
-<div id="pr" style="display:none;padding:10px"><img id="pi" style="width:100%;border-radius:8px;display:none"><video id="pv" style="width:100%;border-radius:8px;display:none" controls></video><button onclick="clr()" style="background:#222;color:#fff;border:none;padding:4px 8px;border-radius:4px;margin-top:4px">X</button></div>
+<header>📸 GelephuGram V3 🇧🇹 <span>Druk's Instagram • Made in Gelephu</span></header>
+<main>
+<div class="card">
+<div class="input-row">
+<input id="txt" type="text" placeholder="What's happening in Gelephu?">
+<label class="btn btn-photo">📷<input id="file" type="file" accept="image/*" style="display:none"></label>
+<button class="btn" onclick="addPost()">Post</button>
+</div>
+<p id="preview" style="display:none"><img id="prevImg" style="width:100%;border-radius:12px;margin-top:10px"></p>
+</div>
 <div id="feed"></div>
+</main>
 <script>
-let sm=null,st=null;
-function pv(e){
- let file=e.target.files[0];
- if(!file)return;
+let posts = JSON.parse(localStorage.getItem("gelephuV3")||"null") || [
+ {user:"karma.wangmo",place:"Gelephu Market",text:"Ema Datshi today! 🌶️🧀 Best in Gelephu! #BhutaneseFood",likes:1247,img:"https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=600",liked:false},
+ {user:"pema.travels",place:"Gelephu Valley",text:"Sunrise hike ⛰️ Happiness is here in Gelephu! #Gelephu #Bhutan",likes:892,img:"https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=600",liked:false}
+];
+let selectedImage = "";
+
+document.getElementById("file").addEventListener("change", e=>{
+ let f=e.target.files[0];
+ if(!f)return;
  let r=new FileReader();
- r.onload=function(ev){
-  sm=ev.target.result;
-  st=file.type.startsWith('video')?'video':'image';
-  document.getElementById('pr').style.display='block';
-  if(st=='image'){
-   document.getElementById('pi').src=sm;
-   document.getElementById('pi').style.display='block';
-   document.getElementById('pv').style.display='none'
-  }else{
-   document.getElementById('pv').src=sm;
-   document.getElementById('pv').style.display='block';
-   document.getElementById('pi').style.display='none'
-  }
+ r.onload=ev=>{
+  selectedImage=ev.target.result;
+  document.getElementById("prevImg").src=selectedImage;
+  document.getElementById("preview").style.display="block";
  };
- r.readAsDataURL(file)
+ r.readAsDataURL(f);
+});
+
+function render(){
+ let h="";
+ for(let i=posts.length-1;i>=0;i--){
+  let p=posts[i];
+  h+=`<div class="post">
+   <div class="post-top"><div class="avatar">${p.user[0].toUpperCase()}</div><div><b>@${p.user}</b><br><span class="small">📍 ${p.place}</span></div></div>
+   ${p.img?`<img src="${p.img}">`:``}
+   <div class="actions"><b onclick="like(${i})">${p.liked?'❤️':'🤍'} ${p.likes}</b> <b>💬</b> <b>✈️</b></div>
+   <div class="info"><b>@${p.user}</b> ${p.text}<br><span class="small">just now • Gelephu</span></div>
+  </div>`;
+ }
+ document.getElementById("feed").innerHTML=h;
+ localStorage.setItem("gelephuV3",JSON.stringify(posts));
 }
-function clr(){sm=null;st=null;document.getElementById('pr').style.display='none';document.getElementById('f').value=''}
-async function load(){
- let r=await fetch('/api/posts');
- let ps=await r.json();
- let feed=document.getElementById('feed');
- feed.innerHTML='';
- if(ps.length==0){feed.innerHTML='<div style="padding:40px;text-align:center;color:#777">No posts yet<br>Be first! 📸</div>';return}
- ps.slice().reverse().forEach(p=>{
-  let mh='';
-  if(p.media){
-   if(p.media_type=='video')mh='<div class="m"><video src="'+p.media+'" controls></video></div>';
-   else mh='<div class="m"><img src="'+p.media+'"></div>';
-  }
-  let ch=p.comments.map(c=>'<div class="b"><b>'+c.user+'</b> '+c.text+'</div>').join('');
-  let d=document.createElement('div');
-  d.className='post';
-  d.innerHTML='<div class="h"><div class="a">'+p.avatar+'</div><div>'+p.username+'</div></div>'+mh+'<div class="act"><span onclick="like('+p.id+')">'+(p.liked?'♥':'♡')+'</span><span>💬</span><span>✈️</span></div><div class="likes">'+p.likes+' likes</div><div class="cap"><b>'+p.username+'</b> '+p.caption+'</div><div class="cmt">'+ch+'</div><div class="add"><input id="inp-'+p.id+'" placeholder="Add comment..."><button onclick="cmt('+p.id+')">Post</button></div>';
-  feed.appendChild(d)
- })
+function addPost(){
+ let v=document.getElementById("txt").value;
+ if(!v &&!selectedImage)return;
+ posts.push({user:"you",place:"Gelephu, Bhutan",text:v||"Photo from Gelephu!",likes:0,img:selectedImage,liked:false});
+ document.getElementById("txt").value=""; selectedImage="";
+ document.getElementById("preview").style.display="none";
+ render();
 }
-async function post(){
- let cap=document.getElementById('cap').value;
- if(!cap&&!sm)return alert('Add photo or caption');
- await fetch('/api/posts',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({caption:cap,media:sm,media_type:st})});
- document.getElementById('cap').value='';
- clr();
- load()
+function like(i){
+ posts[i].liked=!posts[i].liked;
+ posts[i].likes+=posts[i].liked?1:-1;
+ render();
 }
-async function like(id){await fetch('/api/posts/'+id+'/like',{method:'POST'});load()}
-async function cmt(id){
- let inp=document.getElementById('inp-'+id);
- let t=inp.value.trim();
- if(!t)return;
- await fetch('/api/posts/'+id+'/comment',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({text:t})});
- inp.value='';
- load()
-}
-load();
+render();
 </script>
 </body>
 </html>
-'''
-    return html
-
-@app.route('/api/posts', methods=['GET'])
-def get_posts():
-    return jsonify(posts)
-
-@app.route('/api/posts', methods=['POST'])
-def new_post():
-    d=request.json
-    p={"id":len(posts)+1,"username":"kaydalyrics","avatar":"K","caption":d.get('caption',''),"likes":0,"liked":False,"media":d.get('media'),"media_type":d.get('media_type'),"comments":[]}
-    posts.append(p)
-    return jsonify(p)
-
-@app.route('/api/posts/<int:pid>/like', methods=['POST'])
-def like(pid):
-    for p in posts:
-        if p['id']==pid:
-            p['liked']=not p['liked']
-            p['likes']+=1 if p['liked'] else -1
-            return jsonify(p)
-    return jsonify({"error":"not found"}),404
-
-@app.route('/api/posts/<int:pid>/comment', methods=['POST'])
-def comm(pid):
-    d=request.json
-    for p in posts:
-        if p['id']==pid:
-            p['comments'].append({"user":"guest","text":d['text']})
-            return jsonify(p)
-    return jsonify({"error":"not found"}),404
-
-if __name__=='__main__':
-    import os
-    port=int(os.environ.get("PORT",10000))
-    app.run(host='0.0.0.0',port=port)
