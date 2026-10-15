@@ -37,9 +37,9 @@ body{background:#000;color:#fff;font-family:Arial;width:100%}
 </style>
 </head>
 <body>
-<div class="top">GelephuGram</div>
+<div class="top">ZILNOEN'S</div>
 <div class="story"><div class="s"><div class="r"><div class="i">K</div></div><div style="font-size:11px">You</div></div></div>
-<div class="create"><input type="file" id="f" accept="image/*,video/*" style="display:none" onchange="pv(event)"><label for="f" style="background:#222;padding:8px;border-radius:8px">📷</label><textarea id="cap" placeholder="What is in Gelephu?"></textarea><button onclick="post()">Share</button></div>
+<div class="create"><input type="file" id="f" accept="image/*,video/*" style="display:none" onchange="pv(event)"><label for="f" style="background:#222;padding:8px;border-radius:8px">📷</label><textarea id="cap" placeholder="What in your mind?"></textarea><button onclick="post()">Share</button></div>
 <div id="pr" style="display:none;padding:10px"><img id="pi" style="width:100%;border-radius:8px;display:none"><video id="pv" style="width:100%;border-radius:8px;display:none" controls></video><button onclick="clr()" style="background:#222;color:#fff;border:none;padding:4px 8px;border-radius:4px;margin-top:4px">X</button></div>
 <div id="feed"></div>
 <script>
